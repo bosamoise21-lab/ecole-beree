@@ -1,0 +1,9 @@
+.env
+.env.*
+config.local.php
+*.log
+*.sql.bak
+*.sql.gz
+/backups/
+/ecole.sql
+/create_admin_bosa.sql
