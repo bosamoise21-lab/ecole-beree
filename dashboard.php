@@ -14,6 +14,80 @@ $stats = [
     'matieres' => (int) $pdo->query('SELECT COUNT(*) FROM matieres')->fetchColumn(),
 ];
 
+$newAdmissions = $pdo->query(
+    'SELECT id, nom, prenom, niveau_souhaite, created_at
+     FROM admissions
+     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+     ORDER BY created_at DESC'
+)->fetchAll();
+
+$newMessages = $pdo->query(
+    'SELECT id, nom, sujet, created_at
+     FROM messages
+     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+     ORDER BY created_at DESC'
+)->fetchAll();
+
+$newStudents = $pdo->query(
+    'SELECT id, matricule, nom, prenom, created_at
+     FROM eleves
+     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+     ORDER BY created_at DESC'
+)->fetchAll();
+
+$recentPayments = $pdo->query(
+    'SELECT p.id, p.montant, p.type_paiement, p.date_paiement,
+            CONCAT(e.prenom, " ", e.nom) AS eleve
+     FROM paiements p
+     INNER JOIN eleves e ON e.id = p.eleve_id
+     WHERE p.date_paiement >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+     ORDER BY p.date_paiement DESC, p.id DESC'
+)->fetchAll();
+
+$notifications = [];
+foreach ($newAdmissions as $admission) {
+    $notifications[] = [
+        'type' => 'Admission',
+        'personne' => trim($admission['prenom'] . ' ' . $admission['nom']),
+        'detail' => 'Niveau demandé : ' . $admission['niveau_souhaite'],
+        'date' => $admission['created_at'],
+        'timestamp' => strtotime($admission['created_at']),
+        'href' => 'admissions.php',
+    ];
+}
+foreach ($newMessages as $message) {
+    $notifications[] = [
+        'type' => 'Message',
+        'personne' => $message['nom'],
+        'detail' => $message['sujet'],
+        'date' => $message['created_at'],
+        'timestamp' => strtotime($message['created_at']),
+        'href' => 'messages.php',
+    ];
+}
+foreach ($newStudents as $student) {
+    $notifications[] = [
+        'type' => 'Nouvel élève',
+        'personne' => trim($student['prenom'] . ' ' . $student['nom']),
+        'detail' => 'Nouveau dossier · ' . $student['matricule'],
+        'date' => $student['created_at'],
+        'timestamp' => strtotime($student['created_at']),
+        'href' => 'student_profile.php?id=' . (int) $student['id'],
+    ];
+}
+foreach ($recentPayments as $payment) {
+    $notifications[] = [
+        'type' => 'Paiement scolaire',
+        'personne' => $payment['eleve'],
+        'detail' => number_format((float) $payment['montant'], 2, ',', ' ') . ' CDF · ' . $payment['type_paiement'],
+        'date' => $payment['date_paiement'],
+        'timestamp' => strtotime($payment['date_paiement']),
+        'href' => 'fees.php',
+    ];
+}
+usort($notifications, static fn (array $a, array $b): int => $b['timestamp'] <=> $a['timestamp']);
+$notificationCount = count($notifications);
+
 $eleves = $pdo->query(
     'SELECT e.matricule, e.nom, e.prenom, e.date_naissance, c.nom AS classe
      FROM eleves e
@@ -40,6 +114,7 @@ $eleves = $pdo->query(
             <div class="sidebar-label">GESTION DE L’ÉCOLE</div>
             <nav>
                 <a href="dashboard.php">Accueil</a>
+                <a class="notification-nav-link" href="#notifications">Notifications <span class="notification-nav-count"><?= $notificationCount ?></span></a>
                 <a href="manage_data.php">Gérer les données</a>
                 <a href="messages.php">Messages</a>
                 <a href="admissions.php">Admissions</a>
@@ -81,6 +156,54 @@ $eleves = $pdo->query(
                 <div class="stat-card"><span class="stat-icon">P</span><div><div class="label">Enseignants</div><span class="number"><?= $stats['enseignants'] ?></span></div><span class="stat-caption">Équipe pédagogique</span></div>
                 <div class="stat-card"><span class="stat-icon">C</span><div><div class="label">Classes</div><span class="number"><?= $stats['classes'] ?></span></div><span class="stat-caption">Niveaux scolaires</span></div>
                 <div class="stat-card"><span class="stat-icon">M</span><div><div class="label">Matières</div><span class="number"><?= $stats['matieres'] ?></span></div><span class="stat-caption">Programmes enseignés</span></div>
+            </section>
+
+            <section id="notifications" class="paper-panel dashboard-notifications" aria-labelledby="notifications-title">
+                <div class="section-header">
+                    <div>
+                        <p class="eyebrow">Admissions, messages, inscriptions et paiements</p>
+                        <h2 id="notifications-title">Demandes récentes</h2>
+                    </div>
+                    <span class="notification-period">7 derniers jours · <?= $notificationCount ?> élément(s)</span>
+                </div>
+
+                <div class="notification-categories">
+                    <a href="admissions.php" class="notification-category">
+                        <span>Admissions</span>
+                        <strong><?= count($newAdmissions) ?></strong>
+                    </a>
+                    <a href="messages.php" class="notification-category">
+                        <span>Messages</span>
+                        <strong><?= count($newMessages) ?></strong>
+                    </a>
+                    <a href="add_student.php" class="notification-category">
+                        <span>Nouveaux élèves</span>
+                        <strong><?= count($newStudents) ?></strong>
+                    </a>
+                    <a href="fees.php" class="notification-category">
+                        <span>Paiements scolaires</span>
+                        <strong><?= count($recentPayments) ?></strong>
+                    </a>
+                </div>
+                <p class="notification-footnote">Les paiements sont classés selon leur date de versement.</p>
+
+                <?php if ($notifications === []): ?>
+                    <p class="notification-empty">Aucune nouvelle demande ni paiement récent.</p>
+                <?php else: ?>
+                    <ul class="notification-list">
+                        <?php foreach (array_slice($notifications, 0, 10) as $notification): ?>
+                            <li>
+                                <span class="notification-marker" aria-hidden="true"></span>
+                                <div class="notification-content">
+                                    <strong><?= htmlspecialchars($notification['type'] . ' · ' . $notification['personne'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <span><?= htmlspecialchars($notification['detail'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </div>
+                                <time datetime="<?= htmlspecialchars($notification['date'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($notification['date'], ENT_QUOTES, 'UTF-8') ?></time>
+                                <a href="<?= htmlspecialchars($notification['href'], ENT_QUOTES, 'UTF-8') ?>" class="notification-open">Consulter</a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
             </section>
 
             <div class="paper-panel" style="margin-bottom: 24px;">
