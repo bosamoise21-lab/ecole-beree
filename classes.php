@@ -9,8 +9,10 @@ $pdo = getDb();
 $teachers = $pdo->query('SELECT id, nom, prenom FROM enseignants ORDER BY nom, prenom')->fetchAll();
 $message = '';
 $messageType = 'success';
+$csrf = csrfToken('classes');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('classes');
     $nom = trim((string) ($_POST['nom'] ?? ''));
     $niveau = trim((string) ($_POST['niveau'] ?? ''));
     $annee = trim((string) ($_POST['annee_scolaire'] ?? ''));
@@ -96,6 +98,7 @@ $classes = $pdo->query(
 
             <h2>Ajouter une classe</h2>
             <form method="post" action="classes.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field">
                         <label for="nom">Nom de la classe *</label>

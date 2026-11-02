@@ -6,9 +6,12 @@ require_once __DIR__ . '/config.php';
 requireAdmin();
 
 $pdo = getDb();
+$isAdmin = isAdminRole();
+$csrf = csrfToken('messages');
 
-if (isset($_GET['delete'])) {
-    $deleteId = (int) $_GET['delete'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    requireValidCsrfToken('messages');
+    $deleteId = (int) ($_POST['id'] ?? 0);
     if ($deleteId > 0) {
         $pdo->prepare('DELETE FROM messages WHERE id = :id')->execute([':id' => $deleteId]);
         header('Location: messages.php');
@@ -39,11 +42,15 @@ $messages = $pdo->query('SELECT * FROM messages ORDER BY created_at DESC')->fetc
                 <a href="admissions.php">Admissions</a>
                 <a href="add_student.php">Ajouter un élève</a>
                 <a href="classes.php">Classes</a>
-                <a href="teachers.php">Enseignants</a>
                 <a href="notes.php">Notes</a>
                 <a href="attendance.php">Présences</a>
-                <a href="fees.php">Paiements</a>
                 <a href="timetable.php">Emploi du temps</a>
+                <?php if ($isAdmin): ?>
+                    <a href="teachers.php">Enseignants</a>
+                    <a href="fees.php">Paiements</a>
+                    <a href="manage_data.php">Gérer les données</a>
+                    <a href="users.php">Comptes utilisateurs</a>
+                <?php endif; ?>
                 <a href="logout.php">Déconnexion</a>
             </nav>
         </aside>
@@ -78,7 +85,12 @@ $messages = $pdo->query('SELECT * FROM messages ORDER BY created_at DESC')->fetc
                                     <td><?= htmlspecialchars($message['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
                                     <td>
                                         <a href="mailto:<?= rawurlencode($message['email']) ?>?subject=Réponse%20École%20Beree" class="btn-success" style="padding:8px 10px; text-decoration:none;">Répondre</a>
-                                        <a href="messages.php?delete=<?= (int)$message['id'] ?>" class="btn-danger" style="padding:8px 10px; text-decoration:none; margin-left:8px;">Supprimer</a>
+                                        <form method="post" action="messages.php" style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?= (int) $message['id'] ?>">
+                                            <button type="submit" class="btn-danger" style="padding:8px 10px; margin-left:8px;">Supprimer</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

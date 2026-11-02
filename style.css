@@ -1160,6 +1160,48 @@ body {
     color: #176b55;
 }
 
+.notification-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 8px;
+}
+
+.notification-filter,
+.notification-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid #e3eae4;
+    border-radius: 999px;
+    background: #fff;
+    color: #53645d;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.notification-filter[aria-pressed="true"] {
+    border-color: #176b55;
+    background: #e9f4ef;
+    color: #176b55;
+}
+
+.notification-filter span {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    place-items: center;
+    border-radius: 999px;
+    background: #f0f3f0;
+    font-size: .7rem;
+}
+
 .notification-category strong {
     display: grid;
     min-width: 30px;
@@ -1188,12 +1230,25 @@ body {
     border-top: 1px solid #edf0ec;
 }
 
+.notification-list li[hidden],
+.notification-filters[hidden],
+.notification-filter-empty[hidden],
+.notification-more[hidden],
+.notification-results[hidden] {
+    display: none;
+}
+
 .notification-marker {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: #a47732;
 }
+
+.notification-marker-messages { background: #526bc2; }
+.notification-marker-eleves { background: #27836a; }
+.notification-marker-paiements { background: #c28a24; }
+.notification-marker-admissions { background: #a47732; }
 
 .notification-content {
     display: grid;
@@ -1209,19 +1264,60 @@ body {
     white-space: nowrap;
 }
 
-.notification-content span,
-.notification-list time {
+.notification-content span {
     color: #7c877f;
     font-size: 0.78rem;
 }
 
+.notification-list time {
+    display: grid;
+    justify-items: end;
+    gap: 3px;
+    color: #7c877f;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.notification-list time strong {
+    color: #52645b;
+    font-size: .78rem;
+}
+
+.notification-list time span { font-size: .7rem; }
+
 .notification-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 6px 10px;
     border: 1px solid #e3eae4;
     border-radius: 4px;
     color: #53645d;
     font-size: 0.76rem;
     font-weight: 700;
+}
+
+.notification-open span {
+    transition: transform .18s ease;
+}
+
+.notification-open:hover span { transform: translateX(2px); }
+
+.notification-results {
+    margin: 8px 0;
+    color: #748075;
+    font-size: .76rem;
+}
+
+.notification-more {
+    margin-top: 14px;
+    border-radius: 5px;
+}
+
+.notification-more:hover {
+    border-color: #b7d0c0;
+    background: #f7fbf8;
+    color: #176b55;
 }
 
 .notification-empty {
@@ -1238,6 +1334,37 @@ body {
     color: #929a92;
     font-size: 0.72rem;
 }
+
+@media (max-width: 720px) {
+    .notification-list time {
+        justify-items: start;
+        white-space: normal;
+    }
+
+    .notification-list time span { display: none; }
+    .notification-open { justify-self: end; }
+}
+
+.notification-categories-manager {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.user-management-panel,
+.user-account-list {
+    margin-bottom: 24px;
+}
+
+.user-role-description {
+    max-width: 760px;
+    color: #718078;
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.user-create-form { margin-top: 20px; }
+.user-create-form .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.user-create-form .field { min-width: 0; }
+.user-account-list td form { margin: 0; }
 
 table { min-width: 600px; }
 th {
@@ -1259,6 +1386,7 @@ td { color: #566170; }
     .home-intro { grid-template-columns: 1fr; gap: 14px; }
     .home-hero { min-height: 470px; }
     .notification-categories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .user-create-form .grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {
@@ -1286,6 +1414,7 @@ td { color: #566170; }
     .dashboard-welcome { min-height: 250px; }
     .dashboard-user { align-self: flex-end; }
     .notification-categories { grid-template-columns: 1fr; gap: 8px; }
+    .notification-categories-manager { grid-template-columns: 1fr; }
     .notification-list li { grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; }
     .notification-list time { grid-column: 2; }
     .notification-open { grid-column: 3; grid-row: 1 / span 2; }

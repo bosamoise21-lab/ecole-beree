@@ -9,8 +9,10 @@ $pdo = getDb();
 $classes = $pdo->query('SELECT id, nom, niveau, annee_scolaire FROM classes ORDER BY annee_scolaire DESC, nom ASC')->fetchAll();
 $message = '';
 $messageType = 'success';
+$csrf = csrfToken('add_student');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('add_student');
     $nom = trim((string) ($_POST['nom'] ?? ''));
     $prenom = trim((string) ($_POST['prenom'] ?? ''));
     $dateNaissance = trim((string) ($_POST['date_naissance'] ?? ''));
@@ -115,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" action="add_student.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field">
                         <label for="nom">Nom *</label>

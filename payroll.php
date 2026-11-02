@@ -11,17 +11,10 @@ $message = (string) ($_SESSION['payroll_message'] ?? '');
 $messageType = (string) ($_SESSION['payroll_message_type'] ?? 'success');
 unset($_SESSION['payroll_message'], $_SESSION['payroll_message_type']);
 $error = '';
-
-if (empty($_SESSION['payroll_csrf'])) {
-    $_SESSION['payroll_csrf'] = bin2hex(random_bytes(32));
-}
+$csrf = csrfToken('payroll');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
-    if (!hash_equals((string) $_SESSION['payroll_csrf'], $token)) {
-        http_response_code(403);
-        exit('La session du formulaire a expiré. Rechargez la page et réessayez.');
-    }
+    requireValidCsrfToken('payroll');
 
     $action = (string) ($_POST['action'] ?? '');
 
@@ -200,7 +193,7 @@ $formatAmount = static fn (mixed $value): string => number_format((float) $value
                 <h2>Ajouter un employé</h2>
                 <p class="payroll-help">Pour la directrice, le personnel administratif, l’entretien et les autres fonctions.</p>
                 <form method="post" action="payroll.php">
-                    <input type="hidden" name="csrf_token" value="<?= $escape($_SESSION['payroll_csrf']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $escape($csrf) ?>">
                     <input type="hidden" name="action" value="add_employee">
                     <div class="grid">
                         <div class="field"><label for="matricule">Matricule *</label><input id="matricule" name="matricule" maxlength="30" required></div>
@@ -221,7 +214,7 @@ $formatAmount = static fn (mixed $value): string => number_format((float) $value
                 <h2>Enregistrer un versement</h2>
                 <p class="payroll-help">Les versements partiels sont permis; indiquez le mois auquel ils se rapportent.</p>
                 <form method="post" action="payroll.php">
-                    <input type="hidden" name="csrf_token" value="<?= $escape($_SESSION['payroll_csrf']) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $escape($csrf) ?>">
                     <input type="hidden" name="action" value="record_payment">
                     <div class="grid">
                         <div class="field">

@@ -8,12 +8,14 @@ requireAdmin();
 $pdo = getDb();
 $classes = $pdo->query('SELECT * FROM classes ORDER BY annee_scolaire DESC, nom ASC')->fetchAll();
 $matieres = $pdo->query('SELECT * FROM matieres ORDER BY nom ASC')->fetchAll();
-$teachers = $pdo->query('SELECT * FROM enseignants ORDER BY nom, prenom')->fetchAll();
+$teachers = $pdo->query('SELECT id, nom, prenom FROM enseignants ORDER BY nom, prenom')->fetchAll();
 
 $message = '';
 $messageType = 'success';
+$csrf = csrfToken('timetable');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('timetable');
     $classeId = (int) ($_POST['classe_id'] ?? 0);
     $matiereId = (int) ($_POST['matiere_id'] ?? 0);
     $enseignantId = (int) ($_POST['enseignant_id'] ?? 0);
@@ -90,7 +92,9 @@ $planning = $pdo->query(
         <div>Emploi du temps</div>
         <div style="display:flex; gap:12px; align-items:center;">
             <a href="dashboard.php">Dashboard</a>
-            <a href="fees.php">Paiements</a>
+            <?php if (isAdminRole()): ?>
+                <a href="fees.php">Paiements</a>
+            <?php endif; ?>
             <a href="logout.php">Déconnexion</a>
         </div>
     </div>
@@ -103,6 +107,7 @@ $planning = $pdo->query(
 
             <h2>Ajouter un cours</h2>
             <form method="post" action="timetable.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field">
                         <label for="classe_id">Classe</label>

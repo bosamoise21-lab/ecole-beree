@@ -9,17 +9,10 @@ requireAdmin();
 $pdo = getDb();
 $message = '';
 $messageType = 'success';
-
-if (empty($_SESSION['teachers_csrf'])) {
-    $_SESSION['teachers_csrf'] = bin2hex(random_bytes(32));
-}
+$csrf = csrfToken('teachers');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
-    if (!hash_equals((string) $_SESSION['teachers_csrf'], $token)) {
-        http_response_code(403);
-        exit('La session du formulaire a expiré. Rechargez la page et réessayez.');
-    }
+    requireValidCsrfToken('teachers');
 
     $matricule = trim((string) ($_POST['matricule'] ?? ''));
     $nom = trim((string) ($_POST['nom'] ?? ''));
@@ -115,7 +108,7 @@ $teachers = $pdo->query('SELECT * FROM enseignants ORDER BY nom, prenom')->fetch
 
             <h2>Ajouter un enseignant</h2>
             <form method="post" action="teachers.php">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['teachers_csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field"><label for="matricule">Matricule *</label><input type="text" id="matricule" name="matricule" required></div>
                     <div class="field"><label for="nom">Nom *</label><input type="text" id="nom" name="nom" required></div>

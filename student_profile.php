@@ -79,9 +79,12 @@ $attendance = $pdo->prepare(
 $attendance->execute([':eleve_id' => $eleveId]);
 $attendanceList = $attendance->fetchAll();
 
-$fees = $pdo->prepare('SELECT montant, type_paiement, date_paiement FROM paiements WHERE eleve_id = :eleve_id ORDER BY date_paiement DESC');
-$fees->execute([':eleve_id' => $eleveId]);
-$feesList = $fees->fetchAll();
+$feesList = [];
+if (isAdminRole()) {
+    $fees = $pdo->prepare('SELECT montant, type_paiement, trimestre, date_paiement FROM paiements WHERE eleve_id = :eleve_id ORDER BY date_paiement DESC');
+    $fees->execute([':eleve_id' => $eleveId]);
+    $feesList = $fees->fetchAll();
+}
 ?>
 <!doctype html>
 <html lang="fr">
@@ -167,23 +170,25 @@ $feesList = $fees->fetchAll();
             </table>
         </div>
 
-        <div class="panel">
-            <h3>Paiements</h3>
-            <table>
-                <thead>
-                    <tr><th>Type</th><th>Montant</th><th>Date</th></tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($feesList as $fee): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($fee['type_paiement'], ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars(number_format((float) $fee['montant'], 2, ',', ' ') . ' FCFA', ENT_QUOTES, 'UTF-8') ?></td>
-                            <td><?= htmlspecialchars($fee['date_paiement'], ENT_QUOTES, 'UTF-8') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <?php if (isAdminRole()): ?>
+            <div class="panel">
+                <h3>Paiements</h3>
+                <table>
+                    <thead>
+                        <tr><th>Type</th><th>Montant</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($feesList as $fee): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($fee['type_paiement'] === 'trimestre' ? $fee['type_paiement'] . ' ' . (int) $fee['trimestre'] : $fee['type_paiement'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars(number_format((float) $fee['montant'], 2, ',', ' ') . ' FCFA', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td><?= htmlspecialchars($fee['date_paiement'], ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>

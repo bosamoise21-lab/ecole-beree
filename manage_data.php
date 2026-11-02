@@ -110,17 +110,6 @@ $entities = [
             'motif' => ['label' => 'Motif', 'type' => 'text', 'nullable' => true],
         ],
     ],
-    'paiements' => [
-        'label' => 'Paiements',
-        'fields' => [
-            'eleve_id' => ['label' => 'Élève', 'type' => 'foreign', 'source' => 'eleves', 'required' => true],
-            'montant' => ['label' => 'Montant', 'type' => 'number', 'step' => '0.01', 'required' => true],
-            'type_paiement' => ['label' => 'Type de paiement', 'type' => 'select', 'options' => ['inscription' => 'Inscription', 'trimestre' => 'Trimestre', 'frais' => 'Frais', 'autre' => 'Autre'], 'required' => true],
-            'date_paiement' => ['label' => 'Date de paiement', 'type' => 'date', 'required' => true],
-            'mode_paiement' => ['label' => 'Mode de paiement', 'type' => 'select', 'options' => ['cash' => 'Espèces', 'banque' => 'Banque', 'mobile_money' => 'Mobile money', 'cheque' => 'Chèque'], 'required' => true],
-            'commentaire' => ['label' => 'Commentaire', 'type' => 'text', 'nullable' => true],
-        ],
-    ],
     'emplois_du_temps' => [
         'label' => 'Emplois du temps',
         'fields' => [
@@ -159,17 +148,10 @@ $messageType = (string) ($_SESSION['manage_data_message_type'] ?? 'success');
 unset($_SESSION['manage_data_message'], $_SESSION['manage_data_message_type']);
 $values = [];
 $error = '';
-
-if (empty($_SESSION['manage_data_csrf'])) {
-    $_SESSION['manage_data_csrf'] = bin2hex(random_bytes(32));
-}
+$csrf = csrfToken('manage_data');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = (string) ($_POST['csrf_token'] ?? '');
-    if (!hash_equals((string) $_SESSION['manage_data_csrf'], $token)) {
-        http_response_code(403);
-        exit('La session du formulaire a expiré. Rechargez la page et réessayez.');
-    }
+    requireValidCsrfToken('manage_data');
 
     $recordId = (int) ($_POST['id'] ?? 0);
     $values = [];
@@ -313,7 +295,7 @@ foreach ($foreignSources as $source => $query) {
 
             <h2><?= $recordId > 0 ? 'Modifier' : 'Ajouter' ?> : <?= $escape($definition['label']) ?></h2>
             <form method="post" action="manage_data.php?entity=<?= rawurlencode($entity) ?>">
-                <input type="hidden" name="csrf_token" value="<?= $escape($_SESSION['manage_data_csrf']) ?>">
+                <input type="hidden" name="csrf_token" value="<?= $escape($csrf) ?>">
                 <input type="hidden" name="entity" value="<?= $escape($entity) ?>">
                 <input type="hidden" name="id" value="<?= $recordId ?>">
                 <div class="grid">

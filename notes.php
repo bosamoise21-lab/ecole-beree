@@ -11,8 +11,10 @@ $messageType = 'success';
 
 $classes = $pdo->query('SELECT * FROM classes ORDER BY annee_scolaire DESC, nom ASC')->fetchAll();
 $matieres = $pdo->query('SELECT * FROM matieres ORDER BY nom ASC')->fetchAll();
+$csrf = csrfToken('notes');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('notes');
     $classeId = (int) ($_POST['classe_id'] ?? 0);
     $eleveId = (int) ($_POST['eleve_id'] ?? 0);
     $matiereId = (int) ($_POST['matiere_id'] ?? 0);
@@ -116,6 +118,7 @@ $notes = $pdo->query(
 
             <h2>Ajouter une note</h2>
             <form method="post" action="notes.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field">
                         <label for="classe_id">Classe</label>

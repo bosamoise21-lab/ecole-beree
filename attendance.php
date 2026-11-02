@@ -10,8 +10,10 @@ $message = '';
 $messageType = 'success';
 
 $classes = $pdo->query('SELECT * FROM classes ORDER BY annee_scolaire DESC, nom ASC')->fetchAll();
+$csrf = csrfToken('attendance');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('attendance');
     $classeId = (int) ($_POST['classe_id'] ?? 0);
     $eleveId = (int) ($_POST['eleve_id'] ?? 0);
     $datePresence = trim((string) ($_POST['date_presence'] ?? date('Y-m-d')));
@@ -103,6 +105,7 @@ $presences = $pdo->query(
 
             <h2>Marquer une présence</h2>
             <form method="post" action="attendance.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="grid">
                     <div class="field">
                         <label for="classe_id">Classe</label>

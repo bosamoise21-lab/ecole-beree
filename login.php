@@ -10,13 +10,15 @@ if (isAdminConnected()) {
 }
 
 $error = '';
+$csrf = csrfToken('login');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireValidCsrfToken('login');
     $username = trim((string) ($_POST['username'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
 
     if ($username !== '' && $password !== '') {
-        $stmt = getDb()->prepare('SELECT * FROM admins WHERE username = :username LIMIT 1');
+        $stmt = getDb()->prepare('SELECT id, username, password, nom, role FROM admins WHERE username = :username LIMIT 1');
         $stmt->execute([':username' => $username]);
         $admin = $stmt->fetch();
 
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $passwordIsHashed || hash_equals($storedPassword, $password)
         );
 
-        if ($passwordMatches) {
+        if ($passwordMatches && in_array($admin['role'], ['admin', 'gestionnaire'], true)) {
             if (!$passwordIsHashed) {
                 $update = getDb()->prepare('UPDATE admins SET password = :password WHERE id = :id');
                 $update->execute([
@@ -35,9 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
+            $_SESSION = [];
+            session_regenerate_id(true);
             $_SESSION['admin_logged_in'] = true;
+            $_SESSION['admin_id'] = (int) $admin['id'];
             $_SESSION['admin_username'] = $admin['username'];
             $_SESSION['admin_nom'] = $admin['nom'] ?? $admin['username'];
+            $_SESSION['admin_role'] = $admin['role'];
 
             header('Location: dashboard.php');
             exit;
@@ -70,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" action="login.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="field">
                     <label for="username">Nom d'utilisateur</label>
                     <input type="text" id="username" name="username" required>
